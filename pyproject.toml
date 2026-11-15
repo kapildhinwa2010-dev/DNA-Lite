@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dna-lite"
+version = "1.0.0"
+description = "Lightweight DNA for small models"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Kapil Dhinwa", email = "kapildhinwa2010@gmail.com"}
+]
+keywords = ["dna", "neural-networks", "lightweight", "pytorch", "small-models"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Framework :: Pytorch",
+]
+dependencies = [
+    "torch>=2.0.0",
+    "numpy>=1.24.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/kapildhinwa2010-dev/DNA-Lite"
+Repository = "https://github.com/kapildhinwa2010-dev/DNA-Lite.git"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["dna_lite*"]
