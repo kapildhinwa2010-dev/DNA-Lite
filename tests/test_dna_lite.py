@@ -33,8 +33,8 @@ class TestDNALiteInitialization:
         """Test parameter counting"""
         dna = DNALite(num_freqs=16, hidden_size=32)
         count = dna.count_parameters()
-        # 16*2*32 + 32 + 32*1 + 1 = 1024 + 32 + 32 + 1 = 1090
-        expected = 16*2*32 + 32 + 32*1 + 1
+        # Linear(32->32)=1056, Linear(32->1)=33, learnable scale=1 => 1090
+        expected = (32*32 + 32) + (32*1 + 1) + 1
         assert count == expected
 
 
