@@ -1,65 +1,50 @@
 # DNA-Lite
 
-[![CI](https://github.com/kapildhinwa2010-dev/DNA-Lite/actions/workflows/ci.yml/badge.svg)](https://github.com/kapildhinwa2010-dev/DNA-Lite/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/kapildhinwa2010-dev/DNA-Lite/actions/workflows/codeql.yml/badge.svg)](https://github.com/kapildhinwa2010-dev/DNA-Lite/actions/workflows/codeql.yml)
+DNA-Lite is a small PyTorch module that generates dense weight matrices from a two-dimensional coordinate grid. It applies fixed random Fourier projections, sine/cosine features, and a one-hidden-layer SiLU network to produce one scalar per matrix position. The implementation provides weight generation; it does not provide a training or fitting procedure for matching a target model.
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![PyTorch 2.0+](https://img.shields.io/badge/pytorch-2.0%2B-ee4c2c.svg)](https://pytorch.org/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
+## Current scope
 
-Smallest member of the DNA weight-generator family: one hidden layer.
+The repository contains one implementation module, `dna_lite.py`, with the `DNALite` class. Its defaults are 32 Fourier frequencies and a hidden size of 64. The class can:
 
-## What it does
+- Generate a matrix with a requested output and input dimension using `generate_weights(out_dim, in_dim)`.
+- Generate named matrices from a mapping of layer names to `(out_dim, in_dim)` pairs using `generate_layer_weights(...)`.
+- Count the PyTorch parameters in the generator with `count_parameters()`; the fixed Fourier projection is a registered buffer, not a parameter.
 
-DNALite maps a 2D coordinate grid through Fourier features and a
-single-hidden-layer SiLU MLP (~4K parameters by default) to scalar
-weight values, for matrices of any requested shape.
+The generator is randomly initialized. There is no built-in API for fitting its output to existing weights, and the repository reports no measured reconstruction quality, accuracy, or performance results. Generating a dense matrix still materializes all of its entries in memory.
 
-## Installation
+## Requirements and running from source
 
-    pip install torch numpy pytest
+The project metadata requires Python 3.10 or newer. Runtime dependencies are PyTorch 2.0 or newer and NumPy 1.24 or newer; `requirements.txt` also includes pytest for tests. From a clone, install the listed dependencies and run the included example:
 
-## Usage
+```bash
+python -m pip install -r requirements.txt
+python dna_lite.py
+```
 
-    from dna_lite import DNALite
+The example creates a generator and prints shapes and basic statistics for 100×100 and 200×200 generated matrices. There is no separate command-line interface. Although `pyproject.toml` declares project metadata and a wheel can be built, a wheel built from this commit contains only distribution metadata and the license, not `dna_lite.py`; it therefore does not install an importable `dna_lite` module. Use the module directly from the repository checkout:
 
-    dna = DNALite(num_freqs=32, hidden_size=64)
-    W = dna.generate_weights(100, 100)
-    weights = dna.generate_layer_weights({"fc1": (256, 128)})
+```python
+from dna_lite import DNALite
 
-## API
+generator = DNALite(num_freqs=32, hidden_size=64)
+weights = generator.generate_weights(out_dim=100, in_dim=100)
+layer_weights = generator.generate_layer_weights({"fc1": (256, 128)})
+```
 
-- DNALite(num_freqs=32, hidden_size=64)
-- generate_weights(out_dim, in_dim), generate_layer_weights(config),
-  count_parameters()
+`generate_weights` defaults its allocation device to the generator's Fourier-buffer device. To use another device, move the module with PyTorch's `.to(device)` method so its parameters and buffer are on the same device; passing a different `device` to `generate_weights` does not move the module itself.
 
-## Family comparison
+## Tests
 
-| | DNA-Lite | DNA-Pro |
-|---|---|---|
-| Hidden layers | 1 | 3 |
-| Generator params | ~4K | ~257K |
-| Best for | experiments, small shapes | larger shapes, smoother fields |
+On the reviewed commit, `python -m pytest -q` completed locally with **11 tests passed**. The CI workflow specifies pytest, bytecode compilation, and an import/shape smoke check on Python 3.10, 3.11, and 3.12. Locally, bytecode compilation and the workflow's small import/shape smoke check also passed. The workflow configuration was inspected, but remote GitHub Actions results were not verified.
 
-## Honest results and limitations
+## Limitations
 
-- Fewer generator parameters mean a smoother, less expressive field:
-  reconstruction of any structured matrix is worse than DNA-Pro at the
-  same budget. That is the trade, stated plainly.
-- An untrained generator produces a smooth random field, not useful
-  pretrained weights; it must be fitted to a target matrix first.
-- "Lightweight" refers to the generator size only. Materializing a
-  matrix still costs its full dense size in memory at generation time.
-- No accuracy or reconstruction-error numbers are reported because none
-  were measured in a controlled experiment.
-
-## Negative results (from the source experiments)
-
-- The reserv.dean-part-2 log records that generated-weight
-  reconstructions of trained models were not usable without per-layer
-  fitting. The robust storage design kept in the toolkit is the
-  Reed-Solomon slot lattice (ECC-Memory).
+- There is no training loop, target-matrix fitting routine, pretrained model, or demonstrated weight-compression/reconstruction workflow in this repository.
+- The API returns dense tensors; the generator does not avoid the memory cost of the requested matrix.
+- No benchmark or quality/accuracy results are included, so speed, memory savings, and usefulness for any particular model are not established here.
+- The code exposes `generate_layer_weights` for multiple matrices, but it does not define a full neural-network assembly or inference API.
+- The wheel build configuration currently omits the `dna_lite.py` module from the built wheel; the source-checkout workflow above is the verified way to use it.
 
 ## License
 
-MIT - see [LICENSE](LICENSE).
+The `LICENSE` file contains the MIT License. See [LICENSE](LICENSE) for its terms.
